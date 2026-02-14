@@ -6,9 +6,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <swc.h>
 #include <wayland-server.h>
 
 #include "extern.h"
+
+/* macros */
+#define LENGTH(x) (sizeof(x) / sizeof((x)[0]))
 
 /* TODO: dumped the boilerplate for now */
 static void quit(void* data, uint32_t time, uint32_t value, uint32_t state)
@@ -74,6 +78,10 @@ static inline void wl_log(FILE* fd, const char* fmt, ...)
 	fputc('\n', fd);
 	fflush(fd);
 }
+
+/* stubs */
+
+/* static inline grab_bind(mod m, uint32_t k, ) TODO */
 
 #endif /* UTIL_H */
 
