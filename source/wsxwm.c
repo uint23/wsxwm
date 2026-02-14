@@ -12,6 +12,7 @@
 #include "util.h"
 #include "wsxwm.h"
 
+static void on_screen_destroy(void* data);
 static void on_win_destroy(void* data);
 static void setup(void);
 static void setup_binds(void);
@@ -23,6 +24,28 @@ const struct swc_manager manager = {
 struct swc_window_handler window_handler = {
 	.destroy = on_win_destroy,
 };
+struct swc_screen_handler screen_handler = {
+	.destroy = on_screen_destroy,
+};
+
+static void on_screen_destroy(void* data)
+{
+	struct screen* s = data;
+
+	if (!s)
+		return;
+
+	wl_list_remove(&s->link);
+
+	if (wm.sel_screen == s) {
+		if (wl_list_empty(&wm.screens))
+			wm.sel_screen = NULL;
+		else
+			wm.sel_screen = wl_container_of(wm.screens.next, wm.sel_screen, link);
+	}
+
+	free(s);
+}
 
 static void on_win_destroy(void* data)
 {
@@ -107,6 +130,8 @@ void new_screen(struct swc_screen* scr)
 
 	if (!wm.sel_screen)
 		wm.sel_screen = s;
+
+	swc_screen_set_handler(scr, &screen_handler, s);
 
 	_log(stderr, "new_screen=%p\n", (void*)scr);
 }
