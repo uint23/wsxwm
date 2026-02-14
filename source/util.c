@@ -1,5 +1,7 @@
 #include <stdlib.h>
 
+#include <swc.h>
+
 #include "util.h"
 #include "wsxwm.h"
 

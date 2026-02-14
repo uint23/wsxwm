@@ -11,6 +11,7 @@
 #include "util.h"
 #include "wsxwm.h"
 
+static void on_win_destroy(void* data);
 static void setup(void);
 static void setup_binds(void);
 
@@ -18,6 +19,19 @@ struct wm wm;
 const struct swc_manager manager = {
 	.new_screen = new_screen, .new_window = new_window, .new_device = new_device,
 };
+struct swc_window_handler window_handler = {
+	.destroy = on_win_destroy,
+};
+
+static void on_win_destroy(void* data)
+{
+	struct client* c = data;
+
+	if (!c)
+		return;
+
+	/* TODO */
+}
 
 static void setup(void)
 {
@@ -61,6 +75,60 @@ static void setup_binds(void)
 		const struct bind* b = &binds[i];
 		swc_add_binding(b->type, b->mods, b->ksym, b->fn, (void*)&b->arg);
 	}
+}
+
+void new_screen(struct swc_screen* scr)
+{
+	struct screen* s;
+
+	s = malloc(sizeof(*s));
+	if (!s)
+		die(EXIT_FAILURE, "new screen calloc failed");
+
+	s->scr = scr;
+
+	/* TODO: query screen geom */
+	s->x = 0;
+	s->y = 0;
+	s->w = 0;
+	s->h = 0;
+
+	wl_list_insert(&wm.screens, &s->link);
+
+	if (!wm.sel_screen)
+		wm.sel_screen = s;
+
+	_log(stderr, "new_screen=%p\n", (void*)scr);
+}
+
+void new_window(struct swc_window* win)
+{
+	struct client* c;
+
+	c = malloc(sizeof(*c));
+	if (!c)
+		die(EXIT_FAILURE, "malloc client failed");
+
+	c->win = win;
+	c->scr = wm.sel_screen;
+	c->mapped = 0;
+	c->floating = 0;
+	c->fullscreen = 0;
+	c->ws = 0;
+
+	wl_list_insert(&wm.clients, &c->link);
+
+	if (!wm.sel_client)
+		wm.sel_client = c;
+
+	swc_window_set_handler(win, &window_handler, c);
+
+	_log(stderr, "new_window=%p\n", (void*)win);
+}
+
+void new_device(struct libinput_device* dev)
+{
+	(void)dev;
 }
 
 void quit(void* data, uint32_t time, uint32_t value, uint32_t state)
