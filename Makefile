@@ -1,6 +1,6 @@
 CC      ?= cc
 CFLAGS   = -std=c99 -Wall -Wextra -O2 -fcolor-diagnostics
-CPPFLAGS = -D_POSIX_C_SOURCE=200809L
+CPPFLAGS = -D_POSIX_C_SOURCE=200809L -Isource/include
 
 OUT = wsxwm
 SRC = source/wsxwm.c
@@ -15,7 +15,7 @@ ${OUT}: ${SRC}
 	${CC} ${CFLAGS} ${CPPFLAGS} -o ${OUT} ${SRC} ${LDLIBS}
 
 clean:
-	rm -f ${PROG}
+	rm -f ${OUT}
 
 compile_flags:
 	rm -f compile_flags.txt
