@@ -3,7 +3,7 @@ CFLAGS   = -std=c99 -Wall -Wextra -O2 -fcolor-diagnostics
 CPPFLAGS = -D_POSIX_C_SOURCE=200809L -Isource/include
 
 OUT = wsxwm
-SRC = source/wsxwm.c
+SRC = source/wsxwm.c source/util.c
 
 PKGS = swc wayland-server xkbcommon libinput pixman-1 libdrm wld libudev xcb xcb-composite xcb-ewmh xcb-icccm
 CFLAGS += $(shell pkg-config --cflags $(PKGS))

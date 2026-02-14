@@ -7,9 +7,9 @@
 #include <xkbcommon/xkbcommon-keysyms.h>
 
 #include "config.h"
-#include "extern.h"
 #include "types.h"
 #include "util.h"
+#include "wsxwm.h"
 
 static void setup(void);
 static void setup_binds(void);
@@ -24,7 +24,7 @@ static void setup(void)
 	/* display */
 	wm.dpy = wl_display_create();
 	if (!wm.dpy)
-		die (EXIT_FAILURE, "wl_display_create failed");
+		die(EXIT_FAILURE, "wl_display_create failed");
 
 	/* lists */
 	wl_list_init(&wm.screens);
@@ -47,7 +47,7 @@ static void setup(void)
 	if (!sock)
 		die(EXIT_FAILURE, "wl_display_add_socket_auto failed\n");
 	setenv("WAYLAND_DISPLAY", sock, 1);
-	wl_log(stderr, "WAYLAND_DISPLAY=%s\n", sock);
+	_log(stderr, "WAYLAND_DISPLAY=%s\n", sock);
 
 	/* signals */
 	signal(SIGINT,  sig_handler);
@@ -61,6 +61,16 @@ static void setup_binds(void)
 		const struct bind* b = &binds[i];
 		swc_add_binding(b->type, b->mods, b->ksym, b->fn, (void*)&b->arg);
 	}
+}
+
+void quit(void* data, uint32_t time, uint32_t value, uint32_t state)
+{
+	(void)data;
+	(void)time;
+	(void)value;
+	(void)state;
+
+	wl_display_terminate(wm.dpy);
 }
 
 int main(void)
