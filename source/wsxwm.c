@@ -4,6 +4,7 @@
 
 #include <swc.h>
 #include <wayland-server.h>
+#include <wayland-util.h>
 #include <xkbcommon/xkbcommon-keysyms.h>
 
 #include "config.h"
@@ -30,7 +31,16 @@ static void on_win_destroy(void* data)
 	if (!c)
 		return;
 
-	/* TODO */
+	wl_list_remove(&c->link);
+
+	if (wm.sel_client == c) {
+		if (wl_list_empty(&wm.clients))
+			wm.sel_client = NULL;
+		else
+			wm.sel_client = wl_container_of(wm.clients.next, wm.sel_client, link);
+	}
+
+	free(c);
 }
 
 static void setup(void)
