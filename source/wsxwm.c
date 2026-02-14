@@ -9,12 +9,12 @@
 #include "types.h"
 #include "util.h"
 
+void setup(void);
+
 struct wm wm;
 const struct swc_manager manager = {
 	.new_screen = new_screen, .new_window = new_window, .new_device = new_device,
 };
-
-void setup(void);
 
 void setup(void)
 {
@@ -38,7 +38,7 @@ void setup(void)
 	if (!sock)
 		die(EXIT_FAILURE, "wl_display_add_socket_auto failed\n");
 	setenv("WAYLAND_DISPLAY", sock, 1);
-	fprintf(stderr, "WAYLAND_DISPLAY=%s\n", sock);
+	wl_log(stderr, "WAYLAND_DISPLAY=%s\n", sock);
 }
 
 int main(void)

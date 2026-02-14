@@ -61,5 +61,19 @@ static inline void die(int ret, const char* fmt, ...)
 	exit(ret);
 }
 
+static inline void wl_log(FILE* fd, const char* fmt, ...)
+{
+	va_list ap;
+
+	fprintf(fd, "wsxwm: ");
+
+	va_start(ap, fmt);
+	vfprintf(fd, fmt, ap);
+	va_end(ap);
+
+	fputc('\n', fd);
+	fflush(fd);
+}
+
 #endif /* UTIL_H */
 
