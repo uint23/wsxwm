@@ -408,6 +408,11 @@ void new_window(struct swc_window* win)
 		die(EXIT_FAILURE, "malloc client failed");
 
 	win->motion_throttle_ms = 1000 / cfg.motion_throttle_hz;
+	win->min_width = 20;
+	win->min_height = 20;
+	win->max_width = 0;
+	win->max_height = 0;
+
 	c->win = win;
 	c->scr = wm.sel_screen;
 	c->mapped = 0;
