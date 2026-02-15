@@ -19,7 +19,7 @@ static struct bind binds[] = {
 	{ SWC_BINDING_KEY, MOD4|SHFT,   XKB_KEY_e,      { .v = NULL },    quit },
 	{ SWC_BINDING_KEY, MOD4,        XKB_KEY_j,      { .v = NULL },    focus_next },
 	{ SWC_BINDING_KEY, MOD4,        XKB_KEY_k,      { .v = NULL },    focus_prev },
-
+	{ SWC_BINDING_KEY, MOD4|SHFT,   XKB_KEY_q,      { .v = NULL },    kill_sel },
 };
 
 #endif /* CONFIG_H */

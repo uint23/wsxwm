@@ -190,6 +190,21 @@ void focus_prev(void* data, uint32_t time, uint32_t value, uint32_t state)
 	focus(c);
 }
 
+void kill_sel(void* data, uint32_t time, uint32_t value, uint32_t state)
+{
+	(void)data;
+	(void)time;
+	(void)value;
+
+	if (state != WL_KEYBOARD_KEY_STATE_PRESSED)
+		return;
+
+	if (!wm.sel_client)
+		return;
+
+	swc_window_close(wm.sel_client->win);
+}
+
 void new_screen(struct swc_screen* scr)
 {
 	struct screen* s;
