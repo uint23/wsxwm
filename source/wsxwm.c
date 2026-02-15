@@ -39,15 +39,15 @@ static void focus(struct client* c)
 	if (wm.sel_client)
 		swc_window_set_border(
 			wm.sel_client->win,
-			border_color_normal, border_width,
-			border_color_normal, border_width
+			cfg.border_col_normal, cfg.border_width,
+			cfg.border_col_normal, cfg.border_width
 		);
 
 	if (c)
 		swc_window_set_border(
 			c->win,
-			border_color_active, border_width,
-			border_color_active, border_width
+			cfg.border_col_active, cfg.border_width,
+			cfg.border_col_active, cfg.border_width
 		);
 
 	swc_window_focus(c ? c->win : NULL);
@@ -88,7 +88,14 @@ static void on_win_destroy(void* data)
 	if (!c)
 		return;
 
+	if (wm.grab.active && wm.grab.c == c) {
+		wm.grab.active = false;
+		wm.grab.c = NULL;
+	}
+
 	if (wm.sel_client == c) {
+		wm.sel_client = NULL;
+
 		if (c->link.next != &wm.clients)
 			next = wl_container_of(c->link.next, next, link);
 		else if (c->link.prev != &wm.clients)
@@ -124,6 +131,7 @@ static void setup(void)
 	wm.sel_screen = NULL;
 	wm.grab.active = false;
 	wm.grab.resize = false;
+	wm.grab.c = NULL;
 
 	/* event loop */
 	wm.ev_loop = wl_display_get_event_loop(wm.dpy);
@@ -162,8 +170,8 @@ static void tile(struct screen* s)
 	struct swc_rectangle geom;
 	struct swc_rectangle* scr_geom;
 
-	int32_t out_gaps = gap + border_width;
-	int32_t in_gaps = gap + (border_width * 2);
+	int32_t out_gaps = cfg.gaps + cfg.border_width;
+	int32_t in_gaps = cfg.gaps + (cfg.border_width * 2);
 
 	int32_t x;
 	int32_t y;
@@ -303,10 +311,10 @@ void mouse_move(void* data, uint32_t time, uint32_t value, uint32_t state)
 	(void)time;
 	(void)value;
 
-	if (!wm.sel_client)
-		return;
-
 	if (state == WL_POINTER_BUTTON_STATE_PRESSED) {
+		if (!wm.sel_client)
+			return;
+
 		if (!wm.sel_client->floating) {
 			wm.sel_client->floating = true;
 			swc_window_set_stacked(wm.sel_client->win);
@@ -315,11 +323,18 @@ void mouse_move(void* data, uint32_t time, uint32_t value, uint32_t state)
 
 		wm.grab.active = true;
 		wm.grab.resize = false;
-		swc_window_begin_move(wm.sel_client->win);
+		wm.grab.c = wm.sel_client;
+
+		swc_window_begin_move(wm.grab.c->win);
 	}
 	else {
-		swc_window_end_move(wm.sel_client->win);
+		if (!wm.grab.active || wm.grab.resize || !wm.grab.c)
+			return;
+
+		swc_window_end_move(wm.grab.c->win);
+
 		wm.grab.active = false;
+		wm.grab.c = NULL;
 	}
 }
 
@@ -329,10 +344,10 @@ void mouse_resize(void* data, uint32_t time, uint32_t value, uint32_t state)
 	(void)time;
 	(void)value;
 
-	if (!wm.sel_client)
-		return;
-
 	if (state == WL_POINTER_BUTTON_STATE_PRESSED) {
+		if (!wm.sel_client)
+			return;
+
 		if (!wm.sel_client->floating) {
 			wm.sel_client->floating = true;
 			swc_window_set_stacked(wm.sel_client->win);
@@ -341,14 +356,21 @@ void mouse_resize(void* data, uint32_t time, uint32_t value, uint32_t state)
 
 		wm.grab.active = true;
 		wm.grab.resize = true;
+		wm.grab.c = wm.sel_client;
+
 		swc_window_begin_resize(
-			wm.sel_client->win,
+			wm.grab.c->win,
 			SWC_WINDOW_EDGE_RIGHT | SWC_WINDOW_EDGE_BOTTOM
 		);
 	}
 	else {
-		swc_window_end_resize(wm.sel_client->win);
+		if (!wm.grab.active || !wm.grab.resize || !wm.grab.c)
+			return;
+
+		swc_window_end_resize(wm.grab.c->win);
+
 		wm.grab.active = false;
+		wm.grab.c = NULL;
 	}
 }
 
@@ -385,6 +407,7 @@ void new_window(struct swc_window* win)
 	if (!c)
 		die(EXIT_FAILURE, "malloc client failed");
 
+	win->motion_throttle_ms = 1000 / cfg.motion_throttle_hz;
 	c->win = win;
 	c->scr = wm.sel_screen;
 	c->mapped = 0;

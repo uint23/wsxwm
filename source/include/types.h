@@ -49,9 +49,18 @@ struct client {
 	uint32_t       ws;
 };
 
+struct config {
+	uint32_t       motion_throttle_hz;
+	uint32_t       border_col_active;
+	uint32_t       border_col_normal;
+	uint32_t       border_width;
+	uint32_t       gaps;
+};
+
 struct grab {
 	bool           active;
 	bool           resize;
+	struct client* c;
 };
 
 struct screen {
