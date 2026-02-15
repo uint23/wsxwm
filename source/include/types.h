@@ -1,6 +1,7 @@
 #ifndef TYPES_H
 #define TYPES_H
 
+#include <stdbool.h>
 #include <stdint.h>
 
 #include <swc.h>
@@ -32,9 +33,9 @@ struct client {
 	struct wl_list link;
 	struct swc_window* win;
 	struct screen* scr;
-	int            mapped;
-	int            floating;
-	int            fullscreen;
+	bool           mapped;
+	bool           floating;
+	bool           fullscreen;
 	int32_t        x;
 	int32_t        y;
 	uint32_t       w;
