@@ -27,8 +27,7 @@ const struct swc_manager manager = {
 	.new_screen = new_screen, .new_window = new_window, .new_device = new_device,
 };
 struct swc_window_handler window_handler = {
-	.destroy = on_win_destroy,
-	.entered = on_win_entered,
+	.destroy = on_win_destroy, .entered = on_win_entered,
 };
 struct swc_screen_handler screen_handler = {
 	.destroy = on_screen_destroy,
@@ -104,8 +103,10 @@ static void on_win_destroy(void* data)
 
 static void on_win_entered(void* data)
 {
-	struct client* c = data;
+	if (wm.grab.active)
+		return;
 
+	struct client* c = data;
 	focus(c);
 }
 
@@ -116,11 +117,13 @@ static void setup(void)
 	if (!wm.dpy)
 		die(EXIT_FAILURE, "wl_display_create failed");
 
-	/* lists */
+	/* variables */
 	wl_list_init(&wm.screens);
 	wl_list_init(&wm.clients);
 	wm.sel_client = NULL;
 	wm.sel_screen = NULL;
+	wm.grab.active = false;
+	wm.grab.resize = false;
 
 	/* event loop */
 	wm.ev_loop = wl_display_get_event_loop(wm.dpy);
@@ -173,10 +176,10 @@ static void tile(struct screen* s)
 	scr_geom = &s->scr->usable_geometry;
 
 	size_t n = 0;
-	wl_list_for_each(c, &wm.clients, link)
-		if (c->scr == s)
+	wl_list_for_each(c, &wm.clients, link) {
+		if (c->scr == s && !c->floating)
 			n++;
-
+	}
 	if (n == 0)
 		return;
 
@@ -187,7 +190,7 @@ static void tile(struct screen* s)
 
 	if (n == 1) {
 		wl_list_for_each(c, &wm.clients, link) {
-			if (c->scr != s)
+			if (c->scr != s || c->floating)
 				continue;
 
 			geom.x = x;
@@ -202,7 +205,7 @@ static void tile(struct screen* s)
 
 	size_t i = 0;
 	wl_list_for_each(c, &wm.clients, link) {
-		if (c->scr != s)
+		if (c->scr != s || c->floating)
 			continue;
 
 		if (i == 0) {
@@ -294,6 +297,61 @@ void kill_sel(void* data, uint32_t time, uint32_t value, uint32_t state)
 	swc_window_close(wm.sel_client->win);
 }
 
+void mouse_move(void* data, uint32_t time, uint32_t value, uint32_t state)
+{
+	(void)data;
+	(void)time;
+	(void)value;
+
+	if (!wm.sel_client)
+		return;
+
+	if (state == WL_POINTER_BUTTON_STATE_PRESSED) {
+		if (!wm.sel_client->floating) {
+			wm.sel_client->floating = true;
+			swc_window_set_stacked(wm.sel_client->win);
+			tile(wm.sel_client->scr);
+		}
+
+		wm.grab.active = true;
+		wm.grab.resize = false;
+		swc_window_begin_move(wm.sel_client->win);
+	}
+	else {
+		swc_window_end_move(wm.sel_client->win);
+		wm.grab.active = false;
+	}
+}
+
+void mouse_resize(void* data, uint32_t time, uint32_t value, uint32_t state)
+{
+	(void)data;
+	(void)time;
+	(void)value;
+
+	if (!wm.sel_client)
+		return;
+
+	if (state == WL_POINTER_BUTTON_STATE_PRESSED) {
+		if (!wm.sel_client->floating) {
+			wm.sel_client->floating = true;
+			swc_window_set_stacked(wm.sel_client->win);
+			tile(wm.sel_client->scr);
+		}
+
+		wm.grab.active = true;
+		wm.grab.resize = true;
+		swc_window_begin_resize(
+			wm.sel_client->win,
+			SWC_WINDOW_EDGE_RIGHT | SWC_WINDOW_EDGE_BOTTOM
+		);
+	}
+	else {
+		swc_window_end_resize(wm.sel_client->win);
+		wm.grab.active = false;
+	}
+}
+
 void new_screen(struct swc_screen* scr)
 {
 	struct screen* s;
@@ -303,9 +361,6 @@ void new_screen(struct swc_screen* scr)
 		die(EXIT_FAILURE, "new screen calloc failed");
 
 	s->scr = scr;
-
-	/* TODO: query screen geom */
-	struct swc_rectangle r;
 
 	s->x = 0;
 	s->y = 0;
@@ -377,6 +432,28 @@ void spawn(void* data, uint32_t time, uint32_t value, uint32_t state)
 		execvp(cmd[0], cmd);
 		_exit(127);
 	}
+}
+
+void toggle_float(void* data, uint32_t time, uint32_t value, uint32_t state)
+{
+	(void)data;
+	(void)time;
+	(void)value;
+
+	if (state != WL_KEYBOARD_KEY_STATE_PRESSED)
+		return;
+
+	if (!wm.sel_client)
+		return;
+
+	wm.sel_client->floating = !wm.sel_client->floating;
+
+	if (wm.sel_client->floating)
+		swc_window_set_stacked(wm.sel_client->win);
+	else
+		swc_window_set_tiled(wm.sel_client->win);
+
+	tile(wm.sel_client->scr);
 }
 
 int main(void)

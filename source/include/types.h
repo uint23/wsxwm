@@ -8,6 +8,12 @@
 #include <wayland-server.h>
 
 enum {
+	BTN_LEFT   = 0x110,
+	BTN_RIGHT  = 0x111,
+	BTN_MIDDLE = 0x112,
+};
+
+enum {
 	MOD1 = SWC_MOD_ALT,
 	MOD4 = SWC_MOD_LOGO,
 	SHFT = SWC_MOD_SHIFT,
@@ -43,6 +49,11 @@ struct client {
 	uint32_t       ws;
 };
 
+struct grab {
+	bool           active;
+	bool           resize;
+};
+
 struct screen {
 	struct wl_list link;
 	struct swc_screen* scr;
@@ -61,6 +72,7 @@ struct wm {
 
 	struct screen* sel_screen;
 	struct client* sel_client;
+	struct grab    grab;
 };
 
 #endif /* TYPES_H */
