@@ -15,10 +15,12 @@
 
 static void focus(struct client* c);
 static void on_screen_destroy(void* data);
+static void on_screen_usable_geometry_changed(void* data);
 static void on_win_destroy(void* data);
 static void on_win_entered(void* data);
 static void setup(void);
 static void setup_binds(void);
+static void tile(struct screen* s);
 
 struct wm wm;
 const struct swc_manager manager = {
@@ -30,6 +32,7 @@ struct swc_window_handler window_handler = {
 };
 struct swc_screen_handler screen_handler = {
 	.destroy = on_screen_destroy,
+	.usable_geometry_changed = on_screen_usable_geometry_changed,
 };
 
 static void focus(struct client* c)
@@ -71,6 +74,13 @@ static void on_screen_destroy(void* data)
 	free(s);
 }
 
+static void on_screen_usable_geometry_changed(void* data)
+{
+	struct screen* s = data;
+
+	tile(s);
+}
+
 static void on_win_destroy(void* data)
 {
 	struct client* c = data;
@@ -88,6 +98,7 @@ static void on_win_destroy(void* data)
 
 	wl_list_remove(&c->link);
 	focus(next);
+	tile(c->scr);
 	free(c);
 }
 
@@ -139,6 +150,84 @@ static void setup_binds(void)
 	for (size_t i = 0; i < LENGTH(binds); i++) {
 		const struct bind* b = &binds[i];
 		swc_add_binding(b->type, b->mods, b->ksym, b->fn, (void*)&b->arg);
+	}
+}
+
+static void tile(struct screen* s)
+{
+	struct client* c;
+	struct swc_rectangle geom;
+	struct swc_rectangle* scr_geom;
+
+	int32_t out_gaps = gap + border_width;
+	int32_t in_gaps = gap + (border_width * 2);
+
+	int32_t x;
+	int32_t y;
+	uint32_t w;
+	uint32_t h;
+
+	if (!s)
+		return;
+
+	scr_geom = &s->scr->usable_geometry;
+
+	size_t n = 0;
+	wl_list_for_each(c, &wm.clients, link)
+		if (c->scr == s)
+			n++;
+
+	if (n == 0)
+		return;
+
+	x = scr_geom->x + out_gaps;
+	y = scr_geom->y + out_gaps;
+	w = scr_geom->width - (out_gaps * 2);
+	h = scr_geom->height - (out_gaps * 2);
+
+	if (n == 1) {
+		wl_list_for_each(c, &wm.clients, link) {
+			if (c->scr != s)
+				continue;
+
+			geom.x = x;
+			geom.y = y;
+			geom.width  = w;
+			geom.height = h;
+
+			swc_window_set_geometry(c->win, &geom);
+			return;
+		}
+	}
+
+	size_t i = 0;
+	wl_list_for_each(c, &wm.clients, link) {
+		if (c->scr != s)
+			continue;
+
+		if (i == 0) {
+			/* master */
+			geom.x = x;
+			geom.y = y;
+			geom.width = (w - in_gaps) / 2;
+			geom.height = h;
+		}
+		else {
+			/* stack */
+			uint32_t stackn = n - 1;
+			uint32_t idx = i - 1;
+
+			uint32_t mw = (w - in_gaps) / 2;
+			uint32_t sh = (h - in_gaps * (stackn - 1)) / stackn;
+
+			geom.x = x + mw + in_gaps;
+			geom.y = y + (idx * (sh + in_gaps));
+			geom.width  = w - mw - in_gaps;
+			geom.height = sh;
+		}
+
+		swc_window_set_geometry(c->win, &geom);
+		i++;
 	}
 }
 
@@ -253,6 +342,7 @@ void new_window(struct swc_window* win)
 	swc_window_set_tiled(win);
 	swc_window_show(win);
 	focus(c);
+	tile(wm.sel_screen);
 
 	_log(stderr, "new_window=%p\n", (void*)win);
 }
