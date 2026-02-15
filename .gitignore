@@ -3,4 +3,5 @@
 wsxwm
 compile_flags.txt
 *.sh
+*.log
 
