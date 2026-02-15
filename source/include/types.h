@@ -39,10 +39,6 @@ struct client {
 	int32_t        y;
 	uint32_t       w;
 	uint32_t       h;
-	int32_t        rx;
-	int32_t        ry;
-	uint32_t       rw;
-	uint32_t       rh;
 	uint32_t       ws;
 };
 
