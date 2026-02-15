@@ -8,11 +8,12 @@
 #include "wsxwm.h"
 
 static const struct config cfg = {
-	.motion_throttle_hz = 60,
+	.motion_throttle_hz = 85,
 	.border_col_active = 0xffed953e,
 	.border_col_normal = 0xff444444,
-	.border_width = 2,
-	.gaps = 20,
+	.border_width = 1,
+	.master_width = 60, /* % of screen */
+	.gaps = 0,
 };
 
 static const char* termcmd[] = { "st-wl", NULL };

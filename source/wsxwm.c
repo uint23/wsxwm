@@ -40,14 +40,14 @@ static void focus(struct client* c)
 		swc_window_set_border(
 			wm.sel_client->win,
 			cfg.border_col_normal, cfg.border_width,
-			cfg.border_col_normal, cfg.border_width
+			0, 0
 		);
 
 	if (c)
 		swc_window_set_border(
 			c->win,
 			cfg.border_col_active, cfg.border_width,
-			cfg.border_col_active, cfg.border_width
+			0, 0
 		);
 
 	swc_window_focus(c ? c->win : NULL);
@@ -216,11 +216,13 @@ static void tile(struct screen* s)
 		if (c->scr != s || c->floating)
 			continue;
 
+		uint32_t master_width = ((w - in_gaps) * cfg.master_width) / 100;
+
 		if (i == 0) {
 			/* master */
 			geom.x = x;
 			geom.y = y;
-			geom.width = (w - in_gaps) / 2;
+			geom.width = master_width;
 			geom.height = h;
 		}
 		else {
@@ -228,13 +230,12 @@ static void tile(struct screen* s)
 			uint32_t stackn = n - 1;
 			uint32_t idx = i - 1;
 
-			uint32_t mw = (w - in_gaps) / 2;
-			uint32_t sh = (h - in_gaps * (stackn - 1)) / stackn;
+			uint32_t stack_height = (h - in_gaps * (stackn - 1)) / stackn;
 
-			geom.x = x + mw + in_gaps;
-			geom.y = y + (idx * (sh + in_gaps));
-			geom.width  = w - mw - in_gaps;
-			geom.height = sh;
+			geom.x = x + master_width + in_gaps;
+			geom.y = y + (idx * (stack_height + in_gaps));
+			geom.width  = w - master_width - in_gaps;
+			geom.height = stack_height;
 		}
 
 		swc_window_set_geometry(c->win, &geom);
