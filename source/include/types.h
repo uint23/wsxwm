@@ -52,6 +52,7 @@ struct client {
 struct config {
 	uint32_t       motion_throttle_hz;
 	uint32_t       master_width;
+	uint32_t       master_resize;
 	uint32_t       border_col_active;
 	uint32_t       border_col_normal;
 	uint32_t       border_width;

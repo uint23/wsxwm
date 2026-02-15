@@ -22,6 +22,9 @@ static void setup(void);
 static void setup_binds(void);
 static void tile(struct screen* s);
 
+/* master width in px */
+static uint32_t master_width = cfg.master_width;
+
 struct wm wm;
 const struct swc_manager manager = {
 	.new_screen = new_screen, .new_window = new_window, .new_device = new_device,
@@ -216,7 +219,8 @@ static void tile(struct screen* s)
 		if (c->scr != s || c->floating)
 			continue;
 
-		uint32_t master_width = ((w - in_gaps) * cfg.master_width) / 100;
+		if (master_width == cfg.master_width)
+			master_width = ((w - in_gaps) * cfg.master_width) / 100;
 
 		if (i == 0) {
 			/* master */
@@ -304,6 +308,46 @@ void kill_sel(void* data, uint32_t time, uint32_t value, uint32_t state)
 		return;
 
 	swc_window_close(wm.sel_client->win);
+}
+
+void master_resize(void* data, uint32_t time, uint32_t value, uint32_t state)
+{
+	(void)time;
+	(void)value;
+
+	union arg* a = data;
+
+	if (state != WL_KEYBOARD_KEY_STATE_PRESSED)
+		return;
+
+	if (!wm.sel_screen)
+		return;
+
+	{ /* bounds */
+		struct swc_rectangle* g = &wm.sel_screen->scr->usable_geometry;
+
+		uint32_t out_gaps = cfg.gaps + cfg.border_width;
+		uint32_t in_gaps = cfg.gaps + (cfg.border_width * 2);
+
+		int32_t total = (int32_t)g->width - (int32_t)(out_gaps * 2);
+
+		int32_t min_master = 20;
+		int32_t max_master = total - (int32_t)in_gaps - 20;
+
+		if (max_master < min_master)
+			max_master = min_master;
+
+		int32_t mw = (int32_t)master_width + a->i;
+
+		if (mw < min_master)
+			mw = max_master;
+		else if (mw > max_master)
+			mw = min_master;
+
+		master_width = (uint32_t)mw;
+	}
+
+	tile(wm.sel_screen);
 }
 
 void mouse_move(void* data, uint32_t time, uint32_t value, uint32_t state)
@@ -409,8 +453,8 @@ void new_window(struct swc_window* win)
 		die(EXIT_FAILURE, "malloc client failed");
 
 	win->motion_throttle_ms = 1000 / cfg.motion_throttle_hz;
-	win->min_width = 20;
-	win->min_height = 20;
+	win->min_width = 1;
+	win->min_height = 1;
 	win->max_width = 0;
 	win->max_height = 0;
 

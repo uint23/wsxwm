@@ -12,7 +12,7 @@ static const struct config cfg = {
 	.border_col_active = 0xffed953e,
 	.border_col_normal = 0xff444444,
 	.border_width = 1,
-	.master_width = 60, /* % of screen */
+	.master_width = 60,  /* % of screen */
 	.gaps = 0,
 };
 
@@ -26,6 +26,8 @@ static struct bind binds[] = {
 	{ SWC_BINDING_BUTTON, MOD4,        BTN_LEFT,       { .v = NULL },    mouse_move },
 	{ SWC_BINDING_BUTTON, MOD4,        BTN_RIGHT,      { .v = NULL },    mouse_resize },
 	{ SWC_BINDING_KEY,    MOD4,        XKB_KEY_space,  { .v = NULL },    toggle_float },
+	{ SWC_BINDING_KEY,    MOD4,        XKB_KEY_l,      { .i = 50 },      master_resize },
+	{ SWC_BINDING_KEY,    MOD4,        XKB_KEY_h,      { .i = -50 },     master_resize },
 };
 
 #endif /* CONFIG_H */
