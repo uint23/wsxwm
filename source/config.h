@@ -28,6 +28,8 @@ static struct bind binds[] = {
 	{ SWC_BINDING_KEY,    MOD4,        XKB_KEY_space,  { .v = NULL },    toggle_float },
 	{ SWC_BINDING_KEY,    MOD4,        XKB_KEY_l,      { .i = 50 },      master_resize },
 	{ SWC_BINDING_KEY,    MOD4,        XKB_KEY_h,      { .i = -50 },     master_resize },
+	{ SWC_BINDING_KEY,    MOD4|SHFT,   XKB_KEY_k,      { .v = NULL },    master_next },
+	{ SWC_BINDING_KEY,    MOD4|SHFT,   XKB_KEY_j,      { .v = NULL },    master_prev },
 };
 
 #endif /* CONFIG_H */

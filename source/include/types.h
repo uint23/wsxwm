@@ -36,7 +36,8 @@ struct bind {
 };
 
 struct client {
-	struct wl_list link;
+	struct wl_list tiled_link;
+	struct wl_list float_link;
 	struct swc_window* win;
 	struct screen* scr;
 	bool           mapped;
@@ -79,7 +80,8 @@ struct wm {
 	struct wl_event_loop* ev_loop;
 
 	struct wl_list screens;
-	struct wl_list clients;
+	struct wl_list tiled;
+	struct wl_list floating;
 
 	struct screen* sel_screen;
 	struct client* sel_client;

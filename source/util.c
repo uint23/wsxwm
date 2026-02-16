@@ -21,6 +21,64 @@ void die(int ret, const char* fmt, ...)
 	exit(ret);
 }
 
+struct client* first_float(struct screen* s)
+{
+	struct client* c;
+
+	wl_list_for_each(c, &wm.floating, float_link) {
+		if (is_float(c, s))
+			return c;
+	}
+
+	return NULL;
+}
+
+struct client* first_tiled(struct screen* s)
+{
+	struct client* c;
+
+	wl_list_for_each(c, &wm.tiled, tiled_link) {
+		if (is_tiled(c, s))
+			return c;
+	}
+
+	return NULL;
+}
+
+bool is_float(const struct client* c, const struct screen* s)
+{
+	return c && c->scr == s && c->floating;
+}
+
+bool is_tiled(const struct client* c, const struct screen* s)
+{
+	return c && c->scr == s && !c->floating;
+}
+
+struct client* last_float(struct screen* s)
+{
+	struct client* c;
+
+	wl_list_for_each_reverse(c, &wm.floating, float_link) {
+		if (is_float(c, s))
+			return c;
+	}
+
+	return NULL;
+}
+
+struct client* last_tiled(struct screen* s)
+{
+	struct client* c;
+
+	wl_list_for_each_reverse(c, &wm.tiled, tiled_link) {
+		if (is_tiled(c, s))
+			return c;
+	}
+
+	return NULL;
+}
+
 void _log(FILE* fd, const char* fmt, ...)
 {
 	va_list ap;

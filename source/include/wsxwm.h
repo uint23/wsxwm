@@ -8,6 +8,8 @@
 extern void focus_next(void* data, uint32_t time, uint32_t value, uint32_t state);
 extern void focus_prev(void* data, uint32_t time, uint32_t value, uint32_t state);
 extern void kill_sel(void* data, uint32_t time, uint32_t value, uint32_t state);
+extern void master_next(void* data, uint32_t time, uint32_t value, uint32_t state);
+extern void master_prev(void* data, uint32_t time, uint32_t value, uint32_t state);
 extern void master_resize(void* data, uint32_t time, uint32_t value, uint32_t state);
 extern void mouse_move(void* data, uint32_t time, uint32_t value, uint32_t state);
 extern void mouse_resize(void* data, uint32_t time, uint32_t value, uint32_t state);

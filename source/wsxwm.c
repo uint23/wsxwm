@@ -13,13 +13,14 @@
 #include "util.h"
 #include "wsxwm.h"
 
-static void focus(struct client* c);
+static void focus(struct client* c, bool raise);
 static void on_screen_destroy(void* data);
 static void on_screen_usable_geometry_changed(void* data);
 static void on_win_destroy(void* data);
 static void on_win_entered(void* data);
 static void setup(void);
 static void setup_binds(void);
+static void set_floating(struct client* c, bool floating, bool raise);
 static void tile(struct screen* s);
 
 /* master width in px */
@@ -37,7 +38,7 @@ struct swc_screen_handler screen_handler = {
 	.usable_geometry_changed = on_screen_usable_geometry_changed,
 };
 
-static void focus(struct client* c)
+static void focus(struct client* c, bool raise)
 {
 	if (wm.sel_client)
 		swc_window_set_border(
@@ -52,6 +53,9 @@ static void focus(struct client* c)
 			cfg.border_col_active, cfg.border_width,
 			0, 0
 		);
+
+	if (raise && c && c->floating)
+		set_floating(c, true, true);
 
 	swc_window_focus(c ? c->win : NULL);
 	wm.sel_client = c;
@@ -86,7 +90,7 @@ static void on_screen_usable_geometry_changed(void* data)
 static void on_win_destroy(void* data)
 {
 	struct client* c = data;
-	struct client* next = NULL;
+	struct client* next;
 
 	if (!c)
 		return;
@@ -96,17 +100,19 @@ static void on_win_destroy(void* data)
 		wm.grab.c = NULL;
 	}
 
+	if (c->floating)
+		wl_list_remove(&c->float_link);
+	else
+		wl_list_remove(&c->tiled_link);
+
 	if (wm.sel_client == c) {
 		wm.sel_client = NULL;
-
-		if (c->link.next != &wm.clients)
-			next = wl_container_of(c->link.next, next, link);
-		else if (c->link.prev != &wm.clients)
-			next = wl_container_of(c->link.prev, next, link);
+		next = first_float(c->scr);
+		if (!next)
+			next = first_tiled(c->scr);
+		focus(next, true);
 	}
 
-	wl_list_remove(&c->link);
-	focus(next);
 	tile(c->scr);
 	free(c);
 }
@@ -117,7 +123,7 @@ static void on_win_entered(void* data)
 		return;
 
 	struct client* c = data;
-	focus(c);
+	focus(c, true);
 }
 
 static void setup(void)
@@ -129,7 +135,8 @@ static void setup(void)
 
 	/* variables */
 	wl_list_init(&wm.screens);
-	wl_list_init(&wm.clients);
+	wl_list_init(&wm.tiled);
+	wl_list_init(&wm.floating);
 	wm.sel_client = NULL;
 	wm.sel_screen = NULL;
 	wm.grab.active = false;
@@ -167,6 +174,36 @@ static void setup_binds(void)
 	}
 }
 
+static void set_floating(struct client* c, bool floating, bool raise)
+{
+	if (!c)
+		return;
+
+	/* client must be in exactly one list */
+	if (floating) {
+		if (!c->floating) {
+			c->floating = true;
+			wl_list_remove(&c->tiled_link);
+			wl_list_insert(&wm.floating, &c->float_link);
+		}
+		else if (raise) {
+			wl_list_remove(&c->float_link);
+			wl_list_insert(&wm.floating, &c->float_link);
+		}
+
+		swc_window_set_stacked(c->win);
+	}
+	else {
+		if (c->floating) {
+			c->floating = false;
+			wl_list_remove(&c->float_link);
+			wl_list_insert(&wm.tiled, &c->tiled_link);
+		}
+
+		swc_window_set_tiled(c->win);
+	}
+}
+
 static void tile(struct screen* s)
 {
 	struct client* c;
@@ -187,8 +224,8 @@ static void tile(struct screen* s)
 	scr_geom = &s->scr->usable_geometry;
 
 	size_t n = 0;
-	wl_list_for_each(c, &wm.clients, link) {
-		if (c->scr == s && !c->floating)
+	wl_list_for_each(c, &wm.tiled, tiled_link) {
+		if (is_tiled(c, s))
 			n++;
 	}
 	if (n == 0)
@@ -200,8 +237,8 @@ static void tile(struct screen* s)
 	h = scr_geom->height - (out_gaps * 2);
 
 	if (n == 1) {
-		wl_list_for_each(c, &wm.clients, link) {
-			if (c->scr != s || c->floating)
+		wl_list_for_each(c, &wm.tiled, tiled_link) {
+			if (!is_tiled(c, s))
 				continue;
 
 			geom.x = x;
@@ -215,8 +252,8 @@ static void tile(struct screen* s)
 	}
 
 	size_t i = 0;
-	wl_list_for_each(c, &wm.clients, link) {
-		if (c->scr != s || c->floating)
+	wl_list_for_each(c, &wm.tiled, tiled_link) {
+		if (!is_tiled(c, s))
 			continue;
 
 		if (master_width == cfg.master_width)
@@ -253,46 +290,173 @@ void focus_next(void* data, uint32_t time, uint32_t value, uint32_t state)
 	(void)time;
 	(void)value;
 
-	struct client* c = NULL;
+	struct client* c;
+	struct screen* s;
 
 	if (state != WL_KEYBOARD_KEY_STATE_PRESSED)
 		return;
 
-	if (wl_list_empty(&wm.clients))
+	if (!wm.sel_screen)
 		return;
 
-	if (!wm.sel_client)
-		c = wl_container_of(wm.clients.next, c, link);
-	else if (wm.sel_client->link.next != &wm.clients)
-		c = wl_container_of(wm.sel_client->link.next, c, link);
-	else
-		c = wl_container_of(wm.clients.next, c, link);
+	s = wm.sel_screen;
 
-	focus(c);
+	if (!wm.sel_client) {
+		c = first_float(s);
+		if (!c)
+			c = first_tiled(s);
+		focus(c, false);
+		return;
+	}
+
+	/* do not raise/reorder floats while cycling */
+	if (wm.sel_client->floating) {
+		for (c = wl_container_of(wm.sel_client->float_link.next, c, float_link);
+			&c->float_link != &wm.floating;
+			c = wl_container_of(c->float_link.next, c, float_link)) {
+			if (is_float(c, s)) {
+				focus(c, false);
+				return;
+			}
+		}
+
+		c = first_tiled(s);
+		if (!c)
+			c = first_float(s);
+		if (c)
+			focus(c, false);
+		return;
+	}
+
+	for (c = wl_container_of(wm.sel_client->tiled_link.next, c, tiled_link);
+		&c->tiled_link != &wm.tiled;
+		c = wl_container_of(c->tiled_link.next, c, tiled_link)) {
+		if (is_tiled(c, s)) {
+			focus(c, false);
+			return;
+		}
+	}
+
+	c = first_float(s);
+	if (!c)
+		c = first_tiled(s);
+	focus(c, false);
 }
 
 void focus_prev(void* data, uint32_t time, uint32_t value, uint32_t state)
 {
-	struct client* c = NULL;
-
 	(void)data;
 	(void)time;
 	(void)value;
 
+	struct client* c;
+	struct screen* s;
+
 	if (state != WL_KEYBOARD_KEY_STATE_PRESSED)
 		return;
 
-	if (wl_list_empty(&wm.clients))
+	if (!wm.sel_screen)
 		return;
 
-	if (!wm.sel_client)
-		c = wl_container_of(wm.clients.prev, c, link);
-	else if (wm.sel_client->link.prev != &wm.clients)
-		c = wl_container_of(wm.sel_client->link.prev, c, link);
-	else
-		c = wl_container_of(wm.clients.prev, c, link);
+	s = wm.sel_screen;
 
-	focus(c);
+	if (!wm.sel_client) {
+		c = first_float(s);
+		if (!c)
+			c = first_tiled(s);
+		focus(c, false);
+		return;
+	}
+
+	if (wm.sel_client->floating) {
+		for (c = wl_container_of(wm.sel_client->float_link.prev, c, float_link);
+			&c->float_link != &wm.floating;
+			c = wl_container_of(c->float_link.prev, c, float_link)) {
+			if (is_float(c, s)) {
+				focus(c, false);
+				return;
+			}
+		}
+
+		c = last_tiled(s);
+		if (!c)
+			c = last_float(s);
+		if (c)
+			focus(c, false);
+		return;
+	}
+
+	for (c = wl_container_of(wm.sel_client->tiled_link.prev, c, tiled_link);
+		&c->tiled_link != &wm.tiled;
+		c = wl_container_of(c->tiled_link.prev, c, tiled_link)) {
+		if (is_tiled(c, s)) {
+			focus(c, false);
+			return;
+		}
+	}
+
+	c = last_float(s);
+	if (!c)
+		c = last_tiled(s);
+	focus(c, false);
+}
+
+void master_next(void* data, uint32_t time, uint32_t value, uint32_t state)
+{
+	(void)data;
+	(void)time;
+	(void)value;
+
+	struct client* first;
+	struct client* last;
+	struct screen* s;
+
+	if (state != WL_KEYBOARD_KEY_STATE_PRESSED)
+		return;
+
+	if (!wm.sel_screen)
+		return;
+
+	s = wm.sel_screen;
+	first = first_tiled(s);
+	last = last_tiled(s);
+
+	if (!first || !last || first == last)
+		return;
+
+	wl_list_remove(&last->tiled_link);
+	wl_list_insert(first->tiled_link.prev, &last->tiled_link);
+	focus(first_tiled(s), true);
+	tile(s);
+}
+
+void master_prev(void* data, uint32_t time, uint32_t value, uint32_t state)
+{
+	(void)data;
+	(void)time;
+	(void)value;
+
+	struct client* first;
+	struct client* last;
+	struct screen* s;
+
+	if (state != WL_KEYBOARD_KEY_STATE_PRESSED)
+		return;
+
+	if (!wm.sel_screen)
+		return;
+
+	s = wm.sel_screen;
+	first = first_tiled(s);
+	last = last_tiled(s);
+
+	if (!first || !last || first == last)
+		return;
+
+	wl_list_remove(&first->tiled_link);
+	wl_list_insert(&last->tiled_link, &first->tiled_link);
+	focus(first_tiled(s), true);
+	tile(s);
 }
 
 void kill_sel(void* data, uint32_t time, uint32_t value, uint32_t state)
@@ -361,8 +525,7 @@ void mouse_move(void* data, uint32_t time, uint32_t value, uint32_t state)
 			return;
 
 		if (!wm.sel_client->floating) {
-			wm.sel_client->floating = true;
-			swc_window_set_stacked(wm.sel_client->win);
+			set_floating(wm.sel_client, true, false);
 			tile(wm.sel_client->scr);
 		}
 
@@ -394,8 +557,7 @@ void mouse_resize(void* data, uint32_t time, uint32_t value, uint32_t state)
 			return;
 
 		if (!wm.sel_client->floating) {
-			wm.sel_client->floating = true;
-			swc_window_set_stacked(wm.sel_client->win);
+			set_floating(wm.sel_client, true, false);
 			tile(wm.sel_client->scr);
 		}
 
@@ -465,11 +627,12 @@ void new_window(struct swc_window* win)
 	c->fullscreen = 0;
 	c->ws = 0;
 
-	wl_list_insert(&wm.clients, &c->link);
+	wl_list_insert(&wm.tiled, &c->tiled_link);
+	wl_list_init(&c->float_link);
 	swc_window_set_handler(win, &window_handler, c);
 	swc_window_set_tiled(win);
 	swc_window_show(win);
-	focus(c);
+	focus(c, true);
 	tile(wm.sel_screen);
 
 	_log(stderr, "new_window=%p\n", (void*)win);
@@ -519,12 +682,7 @@ void toggle_float(void* data, uint32_t time, uint32_t value, uint32_t state)
 	if (!wm.sel_client)
 		return;
 
-	wm.sel_client->floating = !wm.sel_client->floating;
-
-	if (wm.sel_client->floating)
-		swc_window_set_stacked(wm.sel_client->win);
-	else
-		swc_window_set_tiled(wm.sel_client->win);
+	set_floating(wm.sel_client, !wm.sel_client->floating, true);
 
 	tile(wm.sel_client->scr);
 }
@@ -537,4 +695,3 @@ int main(void)
 	wl_display_destroy(wm.dpy);
 	return EXIT_SUCCESS;
 }
-
