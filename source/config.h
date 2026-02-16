@@ -16,7 +16,7 @@ static const struct config cfg = {
 	.gaps = 0,
 };
 
-static const char* termcmd[] = { "st-wl", NULL };
+static const char* termcmd[] = { "havoc", NULL };
 static struct bind binds[] = {
 	{ SWC_BINDING_KEY,    MOD4,        XKB_KEY_Return, { .v = termcmd }, spawn },
 	{ SWC_BINDING_KEY,    MOD4|SHFT,   XKB_KEY_e,      { .v = NULL },    quit },
