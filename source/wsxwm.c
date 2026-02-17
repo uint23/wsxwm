@@ -615,8 +615,8 @@ void new_window(struct swc_window* win)
 		die(EXIT_FAILURE, "malloc client failed");
 
 	win->motion_throttle_ms = 1000 / cfg.motion_throttle_hz;
-	win->min_width = 1;
-	win->min_height = 1;
+	win->min_width = 20;
+	win->min_height = 20;
 	win->max_width = 0;
 	win->max_height = 0;
 

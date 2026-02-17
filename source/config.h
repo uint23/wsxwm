@@ -17,8 +17,10 @@ static const struct config cfg = {
 };
 
 static const char* termcmd[] = { "havoc", NULL };
+static const char* menucmd[] = { "neumenu_run", NULL };
 static struct bind binds[] = {
 	{ SWC_BINDING_KEY,    MOD4,        XKB_KEY_Return, { .v = termcmd }, spawn },
+	{ SWC_BINDING_KEY,    MOD4,        XKB_KEY_p,      { .v = menucmd }, spawn },
 	{ SWC_BINDING_KEY,    MOD4|SHFT,   XKB_KEY_e,      { .v = NULL },    quit },
 	{ SWC_BINDING_KEY,    MOD4,        XKB_KEY_k,      { .v = NULL },    focus_next },
 	{ SWC_BINDING_KEY,    MOD4,        XKB_KEY_j,      { .v = NULL },    focus_prev },
