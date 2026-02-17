@@ -86,6 +86,8 @@ struct wm {
 	struct screen* sel_screen;
 	struct client* sel_client;
 	struct grab    grab;
+
+	bool           global_floating;
 };
 
 #endif /* TYPES_H */

@@ -622,15 +622,23 @@ void new_window(struct swc_window* win)
 
 	c->win = win;
 	c->scr = wm.sel_screen;
-	c->mapped = 0;
-	c->floating = 0;
-	c->fullscreen = 0;
-	c->ws = 0;
+	c->mapped = false;
+	c->floating = wm.global_floating;
+	c->fullscreen = false;
+	c->ws = false;
 
-	wl_list_insert(&wm.tiled, &c->tiled_link);
-	wl_list_init(&c->float_link);
-	swc_window_set_handler(win, &window_handler, c);
-	swc_window_set_tiled(win);
+	if (c->floating) {
+		wl_list_insert(&wm.floating, &c->float_link);
+		wl_list_init(&c->tiled_link);
+		swc_window_set_handler(win, &window_handler, c);
+		swc_window_set_stacked(win);
+	}
+	else {
+		wl_list_insert(&wm.tiled, &c->tiled_link);
+		wl_list_init(&c->float_link);
+		swc_window_set_handler(win, &window_handler, c);
+		swc_window_set_tiled(win);
+	}
 	swc_window_show(win);
 	focus(c, true);
 	tile(wm.sel_screen);
@@ -685,6 +693,18 @@ void toggle_float(void* data, uint32_t time, uint32_t value, uint32_t state)
 	set_floating(wm.sel_client, !wm.sel_client->floating, true);
 
 	tile(wm.sel_client->scr);
+}
+
+void toggle_float_global(void* data, uint32_t time, uint32_t value, uint32_t state)
+{
+	(void)data;
+	(void)time;
+	(void)value;
+
+	if (state != WL_KEYBOARD_KEY_STATE_PRESSED)
+		return;
+
+	wm.global_floating = !wm.global_floating;
 }
 
 int main(void)

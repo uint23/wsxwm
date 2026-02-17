@@ -19,19 +19,21 @@ static const struct config cfg = {
 static const char* termcmd[] = { "havoc", NULL };
 static const char* menucmd[] = { "neumenu_run", NULL };
 static struct bind binds[] = {
-	{ SWC_BINDING_KEY,    MOD4,        XKB_KEY_Return, { .v = termcmd }, spawn },
-	{ SWC_BINDING_KEY,    MOD4,        XKB_KEY_p,      { .v = menucmd }, spawn },
-	{ SWC_BINDING_KEY,    MOD4|SHFT,   XKB_KEY_e,      { .v = NULL },    quit },
-	{ SWC_BINDING_KEY,    MOD4,        XKB_KEY_k,      { .v = NULL },    focus_next },
-	{ SWC_BINDING_KEY,    MOD4,        XKB_KEY_j,      { .v = NULL },    focus_prev },
-	{ SWC_BINDING_KEY,    MOD4|SHFT,   XKB_KEY_q,      { .v = NULL },    kill_sel },
-	{ SWC_BINDING_BUTTON, MOD4,        BTN_LEFT,       { .v = NULL },    mouse_move },
-	{ SWC_BINDING_BUTTON, MOD4,        BTN_RIGHT,      { .v = NULL },    mouse_resize },
-	{ SWC_BINDING_KEY,    MOD4,        XKB_KEY_space,  { .v = NULL },    toggle_float },
-	{ SWC_BINDING_KEY,    MOD4,        XKB_KEY_l,      { .i = 50 },      master_resize },
-	{ SWC_BINDING_KEY,    MOD4,        XKB_KEY_h,      { .i = -50 },     master_resize },
-	{ SWC_BINDING_KEY,    MOD4|SHFT,   XKB_KEY_k,      { .v = NULL },    master_next },
-	{ SWC_BINDING_KEY,    MOD4|SHFT,   XKB_KEY_j,      { .v = NULL },    master_prev },
+	{ SWC_BINDING_KEY,    MOD4,       XKB_KEY_Return, { .v = termcmd }, spawn },
+	{ SWC_BINDING_KEY,    MOD4,       XKB_KEY_p,      { .v = menucmd }, spawn },
+	{ SWC_BINDING_KEY,    MOD4|SHFT,  XKB_KEY_e,      { .v = NULL },    quit },
+	{ SWC_BINDING_KEY,    MOD4,       XKB_KEY_k,      { .v = NULL },    focus_next },
+	{ SWC_BINDING_KEY,    MOD4,       XKB_KEY_j,      { .v = NULL },    focus_prev },
+	{ SWC_BINDING_KEY,    MOD4|SHFT,  XKB_KEY_q,      { .v = NULL },    kill_sel },
+	{ SWC_BINDING_KEY,    MOD4,       XKB_KEY_space,  { .v = NULL },    toggle_float },
+	{ SWC_BINDING_KEY,    MOD4|SHFT,  XKB_KEY_space,  { .v = NULL },    toggle_float_global },
+	{ SWC_BINDING_KEY,    MOD4,       XKB_KEY_l,      { .i = 50 },      master_resize },
+	{ SWC_BINDING_KEY,    MOD4,       XKB_KEY_h,      { .i = -50 },     master_resize },
+	{ SWC_BINDING_KEY,    MOD4|SHFT,  XKB_KEY_k,      { .v = NULL },    master_next },
+	{ SWC_BINDING_KEY,    MOD4|SHFT,  XKB_KEY_j,      { .v = NULL },    master_prev },
+
+	{ SWC_BINDING_BUTTON, MOD4,       BTN_LEFT,       { .v = NULL },    mouse_move },
+	{ SWC_BINDING_BUTTON, MOD4,       BTN_RIGHT,      { .v = NULL },    mouse_resize },
 };
 
 #endif /* CONFIG_H */
