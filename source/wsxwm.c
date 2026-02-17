@@ -24,7 +24,7 @@ static void set_floating(struct client* c, bool floating, bool raise);
 static void tile(struct screen* s);
 
 /* master width in px */
-static uint32_t master_width = cfg.master_width;
+static uint32_t master_width = 0;
 
 struct wm wm;
 const struct swc_manager manager = {
@@ -256,7 +256,7 @@ static void tile(struct screen* s)
 		if (!is_tiled(c, s))
 			continue;
 
-		if (master_width == cfg.master_width)
+		if (master_width == 0) /* uninitialised */
 			master_width = ((w - in_gaps) * cfg.master_width) / 100;
 
 		if (i == 0) {
