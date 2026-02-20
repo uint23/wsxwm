@@ -123,6 +123,9 @@ static void on_win_entered(void* data)
 		return;
 
 	struct client* c = data;
+	if (!c || c->ws != wm.ws)
+		return;
+
 	focus(c, true);
 }
 
@@ -142,6 +145,8 @@ static void setup(void)
 	wm.grab.active = false;
 	wm.grab.resize = false;
 	wm.grab.c = NULL;
+	wm.global_floating = false;
+	wm.ws = 1;
 
 	/* event loop */
 	wm.ev_loop = wl_display_get_event_loop(wm.dpy);
@@ -207,6 +212,7 @@ static void set_floating(struct client* c, bool floating, bool raise)
 static void tile(struct screen* s)
 {
 	struct client* c;
+	struct screen* screen;
 	struct swc_rectangle geom;
 	struct swc_rectangle* scr_geom;
 
@@ -218,8 +224,12 @@ static void tile(struct screen* s)
 	uint32_t w;
 	uint32_t h;
 
-	if (!s)
+	/* if s=NULL, tile all screens */
+	if (!s) {
+		wl_list_for_each(screen, &wm.screens, link)
+			tile(screen);
 		return;
+	}
 
 	scr_geom = &s->scr->usable_geometry;
 
@@ -231,11 +241,13 @@ static void tile(struct screen* s)
 	if (n == 0)
 		return;
 
+	/* calculate tiling area */
 	x = scr_geom->x + out_gaps;
 	y = scr_geom->y + out_gaps;
 	w = scr_geom->width - (out_gaps * 2);
 	h = scr_geom->height - (out_gaps * 2);
 
+	/* one window, fullscreen it */
 	if (n == 1) {
 		wl_list_for_each(c, &wm.tiled, tiled_link) {
 			if (!is_tiled(c, s))
@@ -251,6 +263,7 @@ static void tile(struct screen* s)
 		}
 	}
 
+	/* tile */
 	size_t i = 0;
 	wl_list_for_each(c, &wm.tiled, tiled_link) {
 		if (!is_tiled(c, s))
@@ -625,7 +638,7 @@ void new_window(struct swc_window* win)
 	c->mapped = false;
 	c->floating = wm.global_floating;
 	c->fullscreen = false;
-	c->ws = false;
+	c->ws = wm.ws;
 
 	if (c->floating) {
 		wl_list_insert(&wm.floating, &c->float_link);
@@ -707,6 +720,73 @@ void toggle_float_global(void* data, uint32_t time, uint32_t value, uint32_t sta
 	wm.global_floating = !wm.global_floating;
 }
 
+void workspace_goto(void* data, uint32_t time, uint32_t value, uint32_t state)
+{
+	(void)time;
+	(void)value;
+
+	union arg* a = data;
+	struct client* c;
+	struct screen* s;
+
+	if (state != WL_KEYBOARD_KEY_STATE_PRESSED)
+		return;
+
+	if (a->u == wm.ws)
+		return;
+
+	wm.ws = a->u;
+	sync_window_visibility();
+
+	if (!wm.sel_screen)
+		return;
+
+	s = wm.sel_screen;
+
+	c = first_float(s);
+	if (!c)
+		c = first_tiled(s);
+	focus(c, true);
+	tile(NULL);
+}
+
+void workspace_moveto(void* data, uint32_t time, uint32_t value, uint32_t state)
+{
+	(void)time;
+	(void)value;
+
+	union arg* a = data;
+	struct client* c;
+	struct client* next;
+
+	if (state != WL_KEYBOARD_KEY_STATE_PRESSED)
+		return;
+
+	if (!wm.sel_client)
+		return;
+
+	c = wm.sel_client;
+
+	if (c->ws == a->u)
+		return;
+
+	c->ws = a->u;
+	if (c->ws == wm.ws)
+		swc_window_show(c->win);
+	else
+		swc_window_hide(c->win);
+
+	next = NULL;
+	if (wm.sel_screen) {
+		next = first_float(wm.sel_screen);
+		if (!next)
+			next = first_tiled(wm.sel_screen);
+	}
+
+	focus(next, true);
+	tile(NULL);
+}
+
 int main(void)
 {
 	setup();
@@ -715,3 +795,4 @@ int main(void)
 	wl_display_destroy(wm.dpy);
 	return EXIT_SUCCESS;
 }
+

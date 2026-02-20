@@ -20,6 +20,8 @@ extern void quit(void* data, uint32_t time, uint32_t value, uint32_t state);
 extern void spawn(void* data, uint32_t time, uint32_t value, uint32_t state);
 extern void toggle_float(void* data, uint32_t time, uint32_t value, uint32_t state);
 extern void toggle_float_global(void* data, uint32_t time, uint32_t value, uint32_t state);
+extern void workspace_goto(void* data, uint32_t time, uint32_t value, uint32_t state);
+extern void workspace_moveto(void* data, uint32_t time, uint32_t value, uint32_t state);
 
 extern struct wm wm;
 

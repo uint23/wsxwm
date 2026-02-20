@@ -47,12 +47,12 @@ struct client* first_tiled(struct screen* s)
 
 bool is_float(const struct client* c, const struct screen* s)
 {
-	return c && c->scr == s && c->floating;
+	return c && c->ws == wm.ws && c->scr == s && c->floating;
 }
 
 bool is_tiled(const struct client* c, const struct screen* s)
 {
-	return c && c->scr == s && !c->floating;
+	return c && c->ws == wm.ws && c->scr == s && !c->floating;
 }
 
 struct client* last_float(struct screen* s)
@@ -101,3 +101,21 @@ void sig_handler(int s)
 		wl_display_terminate(wm.dpy);
 }
 
+void sync_window_visibility(void)
+{
+	struct client* c;
+
+	wl_list_for_each(c, &wm.floating, float_link) {
+		if (c->ws == wm.ws)
+			swc_window_show(c->win);
+		else
+			swc_window_hide(c->win);
+	}
+
+	wl_list_for_each(c, &wm.tiled, tiled_link) {
+		if (c->ws == wm.ws)
+			swc_window_show(c->win);
+		else
+			swc_window_hide(c->win);
+	}
+}

@@ -22,7 +22,7 @@ enum {
 
 union arg {
 	int            i;
-	uint32_t       ui;
+	uint32_t       u;
 	float          f;
 	const void*    v;
 };
@@ -88,6 +88,7 @@ struct wm {
 	struct grab    grab;
 
 	bool           global_floating;
+	uint8_t        ws;
 };
 
 #endif /* TYPES_H */

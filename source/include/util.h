@@ -19,6 +19,7 @@ struct client* last_float(struct screen* s);
 struct client* last_tiled(struct screen* s);
 void _log(FILE* fd, const char* fmt, ...);
 void sig_handler(int s);
+void sync_window_visibility(void);
 
 #define LENGTH(x) (sizeof(x) / sizeof((x)[0]))
 
