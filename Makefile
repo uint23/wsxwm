@@ -1,24 +1,14 @@
-CC      ?= cc
-# CFLAGS   = -std=c99 -Wall -Wextra -O0 -g -fcolor-diagnostics # debug
-CFLAGS   = -std=c99 -Wall -Wextra -O2 -fcolor-diagnostics
-CPPFLAGS = -D_POSIX_C_SOURCE=200809L -Isource/include
+.include "common.mk"
 
-OUT = wsxwm
-SRC = source/wsxwm.c source/util.c
+# pkg-config
+PKG_CFLAGS != pkg-config --cflags ${PKGS}
+PKG_LIBS   != pkg-config --libs   ${PKGS}
+CFLAGS += ${PKG_CFLAGS}
+LDLIBS += ${PKG_LIBS} -lm
 
-PKGS = swc wayland-server xkbcommon libinput pixman-1 libdrm wld libudev xcb xcb-composite xcb-ewmh xcb-icccm
-CFLAGS += $(shell pkg-config --cflags $(PKGS))
-LDLIBS += $(shell pkg-config --libs   $(PKGS)) -lm
-
-all: ${OUT}
-
-${OUT}: ${SRC}
-	${CC} ${CFLAGS} ${CPPFLAGS} -o ${OUT} ${SRC} ${LDLIBS}
-
-clean:
-	rm -f ${OUT}
-
-compile_flags:
-	rm -f compile_flags.txt
-	for f in ${CFLAGS} ${CPPFLAGS}; do echo $$f >> compile_flags.txt; done
+# detect clang
+CC_VERSION != ${CC} --version 2>/dev/null || true
+.if ${CC_VERSION:M*clang*}
+CFLAGS += -fcolor-diagnostics
+.endif
 
