@@ -153,8 +153,6 @@ static void setup(void)
 	if (!swc_initialize(wm.dpy, wm.ev_loop, &manager))
 		die(EXIT_FAILURE, "swc_initialize failed\n");
 
-	/* TODO: temp wallpaper and quit binding */
-	swc_wallpaper_color_set(0xff1e1f21);
 	setup_binds();
 
 	/* display socket */
