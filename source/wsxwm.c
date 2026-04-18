@@ -437,7 +437,6 @@ void master_next(void* data, uint32_t time, uint32_t value, uint32_t state)
 
 	wl_list_remove(&last->tiled_link);
 	wl_list_insert(first->tiled_link.prev, &last->tiled_link);
-	focus(first_tiled(s), true);
 	tile(s);
 }
 
@@ -466,7 +465,6 @@ void master_prev(void* data, uint32_t time, uint32_t value, uint32_t state)
 
 	wl_list_remove(&first->tiled_link);
 	wl_list_insert(&last->tiled_link, &first->tiled_link);
-	focus(first_tiled(s), true);
 	tile(s);
 }
 
