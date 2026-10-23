@@ -4,7 +4,7 @@ CPPFLAGS = -Iinclude -D_POSIX_C_SOURCE=200809L
 
 SRCS = source/wsxwm.c \
        source/util.c
-HDRS = include/wsxwm.h \
+HDRS = include/common.h \
        include/util.h
 OUT = wsxwm
 

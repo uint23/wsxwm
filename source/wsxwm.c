@@ -9,9 +9,13 @@
 #include <xkbcommon/xkbcommon-keysyms.h>
 
 #include "config.h"
-#include "types.h"
+#include "common.h"
 #include "util.h"
-#include "wsxwm.h"
+
+#define CHECK_KEYBOARD_KEY_STATE_PRESSED(state) do {\
+	if (state != WL_KEYBOARD_KEY_STATE_PRESSED) \
+		return; \
+	} while (0)
 
 static void focus(struct client* c, bool raise);
 static void on_screen_destroy(void* data);
@@ -297,15 +301,13 @@ static void tile(struct screen* s)
 
 void focus_next(void* data, uint32_t time, uint32_t value, uint32_t state)
 {
+	CHECK_KEYBOARD_KEY_STATE_PRESSED(state);
 	(void)data;
 	(void)time;
 	(void)value;
 
 	struct client* c;
 	struct screen* s;
-
-	if (state != WL_KEYBOARD_KEY_STATE_PRESSED)
-		return;
 
 	if (!wm.sel_screen)
 		return;
@@ -356,15 +358,13 @@ void focus_next(void* data, uint32_t time, uint32_t value, uint32_t state)
 
 void focus_prev(void* data, uint32_t time, uint32_t value, uint32_t state)
 {
+	CHECK_KEYBOARD_KEY_STATE_PRESSED(state);
 	(void)data;
 	(void)time;
 	(void)value;
 
 	struct client* c;
 	struct screen* s;
-
-	if (state != WL_KEYBOARD_KEY_STATE_PRESSED)
-		return;
 
 	if (!wm.sel_screen)
 		return;
@@ -414,6 +414,7 @@ void focus_prev(void* data, uint32_t time, uint32_t value, uint32_t state)
 
 void master_next(void* data, uint32_t time, uint32_t value, uint32_t state)
 {
+	CHECK_KEYBOARD_KEY_STATE_PRESSED(state);
 	(void)data;
 	(void)time;
 	(void)value;
@@ -421,9 +422,6 @@ void master_next(void* data, uint32_t time, uint32_t value, uint32_t state)
 	struct client* first;
 	struct client* last;
 	struct screen* s;
-
-	if (state != WL_KEYBOARD_KEY_STATE_PRESSED)
-		return;
 
 	if (!wm.sel_screen)
 		return;
@@ -442,6 +440,8 @@ void master_next(void* data, uint32_t time, uint32_t value, uint32_t state)
 
 void master_prev(void* data, uint32_t time, uint32_t value, uint32_t state)
 {
+	CHECK_KEYBOARD_KEY_STATE_PRESSED(state);
+
 	(void)data;
 	(void)time;
 	(void)value;
@@ -449,9 +449,6 @@ void master_prev(void* data, uint32_t time, uint32_t value, uint32_t state)
 	struct client* first;
 	struct client* last;
 	struct screen* s;
-
-	if (state != WL_KEYBOARD_KEY_STATE_PRESSED)
-		return;
 
 	if (!wm.sel_screen)
 		return;
@@ -470,12 +467,11 @@ void master_prev(void* data, uint32_t time, uint32_t value, uint32_t state)
 
 void kill_sel(void* data, uint32_t time, uint32_t value, uint32_t state)
 {
+	CHECK_KEYBOARD_KEY_STATE_PRESSED(state);
+
 	(void)data;
 	(void)time;
 	(void)value;
-
-	if (state != WL_KEYBOARD_KEY_STATE_PRESSED)
-		return;
 
 	if (!wm.sel_client)
 		return;
@@ -485,13 +481,12 @@ void kill_sel(void* data, uint32_t time, uint32_t value, uint32_t state)
 
 void master_resize(void* data, uint32_t time, uint32_t value, uint32_t state)
 {
+	CHECK_KEYBOARD_KEY_STATE_PRESSED(state);
+
 	(void)time;
 	(void)value;
 
 	union arg* a = data;
-
-	if (state != WL_KEYBOARD_KEY_STATE_PRESSED)
-		return;
 
 	if (!wm.sel_screen)
 		return;
@@ -672,14 +667,13 @@ void quit(void* data, uint32_t time, uint32_t value, uint32_t state)
 
 void spawn(void* data, uint32_t time, uint32_t value, uint32_t state)
 {
+	CHECK_KEYBOARD_KEY_STATE_PRESSED(state);
+
 	union arg* a = data;
 	char* const* cmd = (char* const*)a->v;
 
 	(void)time;
 	(void)value;
-
-	if (state != WL_KEYBOARD_KEY_STATE_PRESSED)
-		return;
 
 	if (fork() == 0) {
 		execvp(cmd[0], cmd);
@@ -689,12 +683,11 @@ void spawn(void* data, uint32_t time, uint32_t value, uint32_t state)
 
 void toggle_float(void* data, uint32_t time, uint32_t value, uint32_t state)
 {
+	CHECK_KEYBOARD_KEY_STATE_PRESSED(state);
+
 	(void)data;
 	(void)time;
 	(void)value;
-
-	if (state != WL_KEYBOARD_KEY_STATE_PRESSED)
-		return;
 
 	if (!wm.sel_client)
 		return;
@@ -706,27 +699,25 @@ void toggle_float(void* data, uint32_t time, uint32_t value, uint32_t state)
 
 void toggle_float_global(void* data, uint32_t time, uint32_t value, uint32_t state)
 {
+	CHECK_KEYBOARD_KEY_STATE_PRESSED(state);
+
 	(void)data;
 	(void)time;
 	(void)value;
-
-	if (state != WL_KEYBOARD_KEY_STATE_PRESSED)
-		return;
 
 	wm.global_floating = !wm.global_floating;
 }
 
 void workspace_goto(void* data, uint32_t time, uint32_t value, uint32_t state)
 {
+	CHECK_KEYBOARD_KEY_STATE_PRESSED(state);
+
 	(void)time;
 	(void)value;
 
 	union arg* a = data;
 	struct client* c;
 	struct screen* s;
-
-	if (state != WL_KEYBOARD_KEY_STATE_PRESSED)
-		return;
 
 	if (a->u == wm.ws)
 		return;
@@ -748,15 +739,14 @@ void workspace_goto(void* data, uint32_t time, uint32_t value, uint32_t state)
 
 void workspace_moveto(void* data, uint32_t time, uint32_t value, uint32_t state)
 {
+	CHECK_KEYBOARD_KEY_STATE_PRESSED(state);
+
 	(void)time;
 	(void)value;
 
 	union arg* a = data;
 	struct client* c;
 	struct client* next;
-
-	if (state != WL_KEYBOARD_KEY_STATE_PRESSED)
-		return;
 
 	if (!wm.sel_client)
 		return;

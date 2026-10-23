@@ -2,8 +2,8 @@
 
 #include <swc.h>
 
+#include "common.h"
 #include "util.h"
-#include "wsxwm.h"
 
 void die(int ret, const char* fmt, ...)
 {
