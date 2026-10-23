@@ -16,8 +16,8 @@ static const struct config cfg = {
 	.gaps = 0,
 };
 
-static const char* termcmd[] = { "havoc", NULL };
-static const char* menucmd[] = { "neumenu_run", NULL };
+static const char* termcmd[] = { "cterm", NULL };
+static const char* menucmd[] = { "dmenu_run", NULL };
 static struct bind binds[] = {
 	/* keyboard */
 	{ SWC_BINDING_KEY,    MOD4,       XKB_KEY_Return, { .v = termcmd }, spawn },
