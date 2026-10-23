@@ -3,7 +3,7 @@
 #include <swc.h>
 
 #include "common.h"
-#include "util.h"
+#include "utils.h"
 
 void die(int ret, const char* fmt, ...)
 {

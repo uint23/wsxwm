@@ -3,9 +3,9 @@ CFLAGS = -std=c99 -Wall -Wextra -O2
 CPPFLAGS = -Iinclude -D_POSIX_C_SOURCE=200809L
 
 SRCS = source/wsxwm.c \
-       source/util.c
+       source/utils.c
 HDRS = include/common.h \
-       include/util.h
+       include/utils.h
 OUT = wsxwm
 
 PKGS = swc wayland-server xkbcommon libinput pixman-1 libdrm \

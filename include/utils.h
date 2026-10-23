@@ -8,7 +8,7 @@
 #include <swc.h>
 #include <wayland-server.h>
 
-#include "types.h"
+#include "common.h"
 
 void die(int ret, const char* fmt, ...);
 struct client* first_float(struct screen* s);

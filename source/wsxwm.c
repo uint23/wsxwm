@@ -10,7 +10,7 @@
 
 #include "config.h"
 #include "common.h"
-#include "util.h"
+#include "utils.h"
 
 #define CHECK_KEYBOARD_KEY_STATE_PRESSED(state) do {\
 	if (state != WL_KEYBOARD_KEY_STATE_PRESSED) \

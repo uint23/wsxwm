@@ -4,7 +4,6 @@
 #include <xkbcommon/xkbcommon-keysyms.h>
 
 
-#include "types.h"
 #include "common.h"
 
 static const struct config cfg = {
