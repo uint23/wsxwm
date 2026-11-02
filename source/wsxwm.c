@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 
+#include <libinput.h>
 #include <swc.h>
 #include <wayland-server.h>
 #include <wayland-util.h>
@@ -652,7 +653,20 @@ void new_window(struct swc_window* win)
 
 void new_device(struct libinput_device* dev)
 {
-	(void)dev;
+	if (libinput_device_config_scroll_has_natural_scroll(dev) > 0) {
+		libinput_device_config_scroll_set_natural_scroll_enabled(
+			dev,cfg.natural_scrolling
+		);
+	}
+    
+	if (libinput_device_config_tap_get_finger_count(dev) > 0) {
+        libinput_device_config_tap_set_enabled(
+            dev,
+            cfg.tap_to_click
+                ? LIBINPUT_CONFIG_TAP_ENABLED
+                : LIBINPUT_CONFIG_TAP_DISABLED
+        );
+    }
 }
 
 void quit(void* data, uint32_t time, uint32_t value, uint32_t state)
