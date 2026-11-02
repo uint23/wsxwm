@@ -51,6 +51,8 @@ struct client {
 };
 
 struct config {
+	bool natural_scrolling;
+	bool tap_to_click;
 	uint32_t motion_throttle_hz;
 	uint32_t master_width;
 	uint32_t master_resize;

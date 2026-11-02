@@ -5,6 +5,7 @@
 
 
 #include "common.h"
+#include <libinput.h>
 
 static const struct config cfg = {
 	.motion_throttle_hz = 85,
@@ -13,6 +14,8 @@ static const struct config cfg = {
 	.border_width = 1,
 	.master_width = 60,  /* % of screen */
 	.gaps = 0,
+	.tap_to_click = true,
+	.natural_scrolling = true,
 };
 
 static const char* termcmd[] = { "cterm", NULL };
