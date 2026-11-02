@@ -3,6 +3,8 @@
 #include <stdlib.h>
 #include <unistd.h>
 
+#include <libinput.h>
+
 #include <swc.h>
 #include <wayland-server.h>
 #include <wayland-util.h>
@@ -652,6 +654,9 @@ void new_window(struct swc_window* win)
 
 void new_device(struct libinput_device* dev)
 {
+	if (libinput_device_config_tap_get_finger_count(dev) > 0) {
+        libinput_device_config_tap_set_enabled(dev, LIBINPUT_CONFIG_TAP_ENABLED);
+    }
 	(void)dev;
 }
 
